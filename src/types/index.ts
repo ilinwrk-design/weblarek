@@ -60,3 +60,71 @@ export interface IOrderResponse {
   id: string;
   total: number;
 }
+
+/** Данные, которые отображаются основной страницей. */
+export interface IPage {
+  counter: number;
+  gallery: HTMLElement[];
+}
+
+/** Общие отображаемые данные любой карточки товара. */
+export interface ICard {
+  id: string;
+  title: string;
+  price: number | null;
+}
+
+/** Данные карточки товара в каталоге. */
+export interface ICatalogCard extends ICard {
+  category: string;
+  image: string;
+}
+
+/** Данные карточки подробного просмотра товара. */
+export interface IPreviewCard extends ICard {
+  category: string;
+  image: string;
+  description: string;
+  buttonText: string;
+  buttonDisabled: boolean;
+}
+
+/** Данные карточки товара в корзине. */
+export interface IBasketCard extends ICard {
+  index: number;
+}
+
+/** Данные, отображаемые компонентом корзины. */
+export interface IBasketView {
+  items: HTMLElement[];
+  total: number;
+  valid: boolean;
+}
+
+/** Данные универсального модального окна. */
+export interface IModal {
+  content: HTMLElement;
+}
+
+/** Общие данные состояния формы. */
+export interface IFormState {
+  valid: boolean;
+  errors: string;
+}
+
+/** Данные первого шага оформления заказа. */
+export interface IOrderForm extends IFormState {
+  payment: TPayment | '';
+  address: string;
+}
+
+/** Данные формы контактов. */
+export interface IContactsForm extends IFormState {
+  email: string;
+  phone: string;
+}
+
+/** Данные экрана успешного оформления заказа. */
+export interface ISuccess {
+  total: number;
+}
