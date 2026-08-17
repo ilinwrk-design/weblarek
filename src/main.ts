@@ -1,106 +1,47 @@
 import './scss/styles.scss';
 
 import { WebLarekApi } from './components/Communication/WebLarekApi';
-import { Basket } from './components/Models/Basket';
-import { Buyer } from './components/Models/Buyer';
 import { Products } from './components/Models/Products';
+import { CatalogCard } from './components/View/CatalogCard';
+import { Page } from './components/View/Page';
 import { Api } from './components/base/Api';
 import { EventEmitter } from './components/base/Events';
 import { API_URL } from './utils/constants';
-import { apiProducts } from './utils/data';
+import { cloneTemplate } from './utils/utils';
 
-/** Общий брокер событий связывает модели, представления и Презентер. */
+// Один брокер событий используется для связи частей приложения.
 const events = new EventEmitter();
 
-/** Модели получают только интерфейс брокера событий и не зависят от View или API. */
+// Создаем модель каталога и представление главной страницы.
 const productsModel = new Products(events);
-const basketModel = new Basket(events);
-const buyerModel = new Buyer(events);
+const page = new Page(document.body, events);
 
-/** Коммуникационный класс получает базовый API через композицию. */
+// Класс WebLarekApi использует базовый Api для запросов к серверу.
 const api = new Api(API_URL);
 const webLarekApi = new WebLarekApi(api);
 
-// Проверка модели каталога.
-productsModel.setItems(apiProducts.items);
-console.log('Каталог: сохранённый массив товаров:', productsModel.getItems());
+// Когда каталог изменился, получаем товары из модели и создаем карточки.
+events.on('products:changed', () => {
+  const products = productsModel.getItems();
 
-const firstProduct = productsModel.getItems()[0];
-const secondProduct = productsModel.getItems()[1];
-const unavailableProduct = productsModel.getItems()[2];
+  const cards = products.map((product) => {
+    const card = new CatalogCard(
+      cloneTemplate<HTMLElement>('#card-catalog'),
+      events
+    );
 
-if (firstProduct && secondProduct && unavailableProduct) {
-  console.log(
-    'Каталог: товар, найденный по идентификатору:',
-    productsModel.getItemById(firstProduct.id)
-  );
-  console.log(
-    'Каталог: результат поиска отсутствующего товара:',
-    productsModel.getItemById('unknown-product-id')
-  );
+    return card.render(product);
+  });
 
-  productsModel.setSelectedItem(firstProduct);
-  console.log(
-    'Каталог: товар для подробного отображения:',
-    productsModel.getSelectedItem()
-  );
+  page.render({ gallery: cards });
+});
 
-  // Проверка модели корзины.
-  console.log('Корзина: начальное содержимое:', basketModel.getItems());
-  basketModel.addItem(firstProduct);
-  basketModel.addItem(secondProduct);
-  basketModel.addItem(firstProduct);
-  basketModel.addItem(unavailableProduct);
-  console.log(
-    'Корзина: товары после добавления доступных позиций:',
-    basketModel.getItems()
-  );
-  console.log(
-    'Корзина: наличие первого товара:',
-    basketModel.hasItem(firstProduct.id)
-  );
-  console.log('Корзина: количество товаров:', basketModel.getCount());
-  console.log('Корзина: общая стоимость:', basketModel.getTotal());
-
-  basketModel.removeItem(firstProduct);
-  console.log('Корзина: товары после удаления:', basketModel.getItems());
-  basketModel.clear();
-  console.log('Корзина: содержимое после очистки:', basketModel.getItems());
-}
-
-// Проверка модели покупателя.
-console.log('Покупатель: начальные данные:', buyerModel.getData());
-console.log('Покупатель: ошибки пустых полей:', buyerModel.validate());
-
-buyerModel.setData({ address: 'Москва, улица Примерная, 10' });
-buyerModel.setData({ payment: 'card' });
-buyerModel.setData({ email: 'buyer@example.com', phone: '+7 900 000-00-00' });
-console.log(
-  'Покупатель: данные после частичного заполнения:',
-  buyerModel.getData()
-);
-console.log(
-  'Покупатель: ошибки после заполнения полей:',
-  buyerModel.validate()
-);
-console.log(
-  'Покупатель: валидные данные для заказа:',
-  buyerModel.getValidData()
-);
-
-buyerModel.clear();
-console.log('Покупатель: данные после очистки:', buyerModel.getData());
-
-// Получение актуального каталога с сервера и сохранение его в модели.
+// Получаем товары с сервера. После сохранения модель сама сообщит об изменении каталога.
 webLarekApi
   .getProducts()
   .then((response) => {
     productsModel.setItems(response.items);
-    console.log(
-      'Сервер: каталог получен и сохранён в модели:',
-      productsModel.getItems()
-    );
   })
   .catch((error: unknown) => {
-    console.error('Сервер: не удалось получить каталог:', error);
+    console.error('Не удалось получить каталог товаров:', error);
   });
