@@ -1,34 +1,39 @@
 import type { IProduct } from '../../types';
+import type { IEvents } from '../base/Events';
 
-/**
- * Модель каталога товаров.
- * Хранит полученный каталог и товар, выбранный для подробного просмотра.
- */
+/** Модель для хранения товаров каталога. */
 export class Products {
   private items: IProduct[] = [];
   private selectedItem: IProduct | null = null;
+  private events: IEvents;
 
-  /** Сохраняет новый массив товаров в модели. */
-  setItems(items: IProduct[]): void {
-    this.items = [...items];
+  constructor(events: IEvents) {
+    this.events = events;
   }
 
-  /** Возвращает копию массива товаров каталога. */
+  /** Сохраняет товары каталога. */
+  setItems(items: IProduct[]): void {
+    this.items = [...items];
+    this.events.emit('products:changed');
+  }
+
+  /** Возвращает товары каталога. */
   getItems(): IProduct[] {
     return [...this.items];
   }
 
-  /** Возвращает товар по идентификатору или undefined, если товар не найден. */
+  /** Ищет товар по id. */
   getItemById(id: string): IProduct | undefined {
     return this.items.find((item) => item.id === id);
   }
 
-  /** Сохраняет товар, выбранный для подробного отображения. */
+  /** Сохраняет выбранный товар. */
   setSelectedItem(item: IProduct): void {
     this.selectedItem = item;
+    this.events.emit('product:selected');
   }
 
-  /** Возвращает выбранный товар или null, если товар ещё не выбран. */
+  /** Возвращает выбранный товар. */
   getSelectedItem(): IProduct | null {
     return this.selectedItem;
   }

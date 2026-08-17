@@ -1,8 +1,5 @@
-import type {
-  IBuyer,
-  TBuyerData,
-  TBuyerErrors,
-} from '../../types';
+import type { IBuyer, TBuyerData, TBuyerErrors } from '../../types';
+import type { IEvents } from '../base/Events';
 
 const EMPTY_BUYER_DATA: TBuyerData = {
   payment: '',
@@ -11,38 +8,37 @@ const EMPTY_BUYER_DATA: TBuyerData = {
   address: '',
 };
 
-/**
- * Модель покупателя.
- * Хранит введённые данные и проверяет заполненность каждого поля.
- */
+/** Модель для хранения данных покупателя. */
 export class Buyer {
   private data: TBuyerData = { ...EMPTY_BUYER_DATA };
+  private events: IEvents;
 
-  /**
-   * Частично обновляет данные покупателя.
-   * Поля, отсутствующие в параметре, сохраняют прежние значения.
-   */
+  constructor(events: IEvents) {
+    this.events = events;
+  }
+
+  /** Сохраняет переданные данные покупателя. */
   setData(data: Partial<TBuyerData>): void {
     this.data = {
       ...this.data,
       ...data,
     };
+
+    this.events.emit('buyer:changed');
   }
 
-  /** Возвращает копию всех текущих данных покупателя. */
+  /** Возвращает данные покупателя. */
   getData(): TBuyerData {
     return { ...this.data };
   }
 
-  /** Очищает все сохранённые данные покупателя. */
+  /** Очищает данные покупателя. */
   clear(): void {
     this.data = { ...EMPTY_BUYER_DATA };
+    this.events.emit('buyer:changed');
   }
 
-  /**
-   * Проверяет заполненность полей и возвращает объект найденных ошибок.
-   * Отсутствие свойства в объекте означает, что поле прошло проверку.
-   */
+  /** Проверяет заполнение полей. */
   validate(): TBuyerErrors {
     const errors: TBuyerErrors = {};
 
@@ -65,12 +61,11 @@ export class Buyer {
     return errors;
   }
 
-  /**
-   * Возвращает заполненные данные в формате заказа.
-   * Метод следует вызывать после успешной валидации.
-   */
+  /** Возвращает данные покупателя после проверки. */
   getValidData(): IBuyer | null {
-    if (Object.keys(this.validate()).length > 0 || !this.data.payment) {
+    const errors = this.validate();
+
+    if (Object.keys(errors).length > 0 || !this.data.payment) {
       return null;
     }
 

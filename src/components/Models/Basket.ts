@@ -1,53 +1,61 @@
 import type { IProduct } from '../../types';
+import type { IEvents } from '../base/Events';
 
-/**
- * Модель корзины.
- * Хранит выбранные товары и предоставляет операции для работы с ними.
- */
+/** Модель для хранения товаров в корзине. */
 export class Basket {
   private items: IProduct[] = [];
+  private events: IEvents;
 
-  /** Возвращает копию массива товаров корзины. */
+  constructor(events: IEvents) {
+    this.events = events;
+  }
+
+  /** Возвращает товары корзины. */
   getItems(): IProduct[] {
     return [...this.items];
   }
 
-  /**
-   * Добавляет товар в корзину.
-   * Товар без цены и товар, который уже находится в корзине, не добавляются.
-   */
+  /** Добавляет товар в корзину. */
   addItem(item: IProduct): void {
     if (item.price === null || this.hasItem(item.id)) {
       return;
     }
 
     this.items.push(item);
+    this.events.emit('basket:changed');
   }
 
-  /** Удаляет переданный товар из корзины. */
+  /** Удаляет товар из корзины. */
   removeItem(item: IProduct): void {
+    if (!this.hasItem(item.id)) {
+      return;
+    }
+
     this.items = this.items.filter((basketItem) => basketItem.id !== item.id);
+    this.events.emit('basket:changed');
   }
 
-  /** Удаляет все товары из корзины. */
+  /** Очищает корзину. */
   clear(): void {
+    if (this.items.length === 0) {
+      return;
+    }
+
     this.items = [];
+    this.events.emit('basket:changed');
   }
 
-  /** Возвращает общую стоимость товаров в корзине. */
+  /** Считает общую стоимость товаров. */
   getTotal(): number {
-    return this.items.reduce(
-      (total, item) => total + (item.price ?? 0),
-      0
-    );
+    return this.items.reduce((total, item) => total + (item.price ?? 0), 0);
   }
 
-  /** Возвращает количество товаров в корзине. */
+  /** Возвращает количество товаров. */
   getCount(): number {
     return this.items.length;
   }
 
-  /** Проверяет наличие товара в корзине по его идентификатору. */
+  /** Проверяет, есть ли товар в корзине. */
   hasItem(id: string): boolean {
     return this.items.some((item) => item.id === id);
   }

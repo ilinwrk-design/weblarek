@@ -5,13 +5,17 @@ import { Basket } from './components/Models/Basket';
 import { Buyer } from './components/Models/Buyer';
 import { Products } from './components/Models/Products';
 import { Api } from './components/base/Api';
+import { EventEmitter } from './components/base/Events';
 import { API_URL } from './utils/constants';
 import { apiProducts } from './utils/data';
 
-/** Модели создаются независимо от API и компонентов интерфейса. */
-const productsModel = new Products();
-const basketModel = new Basket();
-const buyerModel = new Buyer();
+/** Общий брокер событий связывает модели, представления и Презентер. */
+const events = new EventEmitter();
+
+/** Модели получают только интерфейс брокера событий и не зависят от View или API. */
+const productsModel = new Products(events);
+const basketModel = new Basket(events);
+const buyerModel = new Buyer(events);
 
 /** Коммуникационный класс получает базовый API через композицию. */
 const api = new Api(API_URL);
