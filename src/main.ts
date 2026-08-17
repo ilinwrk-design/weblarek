@@ -2,6 +2,7 @@ import './scss/styles.scss';
 
 import { WebLarekApi } from './components/Communication/WebLarekApi';
 import { Products } from './components/Models/Products';
+import { Basket } from './components/Models/Basket';
 import { CatalogCard } from './components/View/CatalogCard';
 import { Modal } from './components/View/Modal';
 import { Page } from './components/View/Page';
@@ -16,6 +17,7 @@ const events = new EventEmitter();
 
 // Создаем модель каталога и основные компоненты представления.
 const productsModel = new Products(events);
+const basketModel = new Basket(events);
 const page = new Page(document.body, events);
 const modal = new Modal(
   ensureElement<HTMLElement>('#modal-container'),
@@ -64,13 +66,45 @@ events.on('product:selected', () => {
     events
   );
 
+  let buttonText = 'Купить';
+
+  if (basketModel.hasItem(product.id)) {
+    buttonText = 'Удалить из корзины';
+  }
+
+  if (product.price === null) {
+    buttonText = 'Недоступно';
+  }
+
   const previewElement = previewCard.render({
     ...product,
-    buttonText: product.price === null ? 'Недоступно' : 'Купить',
+    buttonText,
     buttonDisabled: product.price === null,
   });
 
   modal.render({ content: previewElement });
+});
+
+// Обрабатываем кнопку действия в подробной карточке товара.
+events.on<{ id: string }>('preview:action', (data) => {
+  const product = productsModel.getItemById(data.id);
+
+  if (!product || product.price === null) {
+    return;
+  }
+
+  if (basketModel.hasItem(product.id)) {
+    basketModel.removeItem(product);
+  } else {
+    basketModel.addItem(product);
+  }
+
+  modal.close();
+});
+
+// После изменения корзины обновляем счетчик на главной странице.
+events.on('basket:changed', () => {
+  page.render({ counter: basketModel.getCount() });
 });
 
 // Закрываем модальное окно по событию от компонента Modal.
