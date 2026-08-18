@@ -7,6 +7,7 @@ import { Buyer } from './components/Models/Buyer';
 import { BasketCard } from './components/View/BasketCard';
 import { BasketView } from './components/View/BasketView';
 import { CatalogCard } from './components/View/CatalogCard';
+import { ContactsForm } from './components/View/ContactsForm';
 import { Modal } from './components/View/Modal';
 import { OrderForm } from './components/View/OrderForm';
 import { Page } from './components/View/Page';
@@ -32,6 +33,7 @@ const modal = new Modal(
 // Здесь будем хранить открытую корзину, чтобы обновлять её после удаления товара.
 let basketView: BasketView | null = null;
 let orderForm: OrderForm | null = null;
+let contactsForm: ContactsForm | null = null;
 
 // Класс WebLarekApi использует базовый Api для запросов к серверу.
 const api = new Api(API_URL);
@@ -219,25 +221,67 @@ events.on<{ field: string; value: string }>('order:input', (data) => {
 
 // После изменения данных покупателя обновляем открытую форму.
 events.on('buyer:changed', () => {
-  if (!orderForm) {
-    return;
+  const buyerData = buyerModel.getData();
+  const errors = buyerModel.validate();
+
+  if (orderForm) {
+    orderForm.render({
+      payment: buyerData.payment,
+      address: buyerData.address,
+      valid: !errors.payment && !errors.address,
+      errors: errors.payment || errors.address || '',
+    });
   }
+
+  if (contactsForm) {
+    contactsForm.render({
+      email: buyerData.email,
+      phone: buyerData.phone,
+      valid: !errors.email && !errors.phone,
+      errors: errors.email || errors.phone || '',
+    });
+  }
+});
+
+
+// Переходим ко второму шагу оформления заказа.
+events.on('order:submit', () => {
+  orderForm = null;
 
   const buyerData = buyerModel.getData();
   const errors = buyerModel.validate();
 
-  orderForm.render({
-    payment: buyerData.payment,
-    address: buyerData.address,
-    valid: !errors.payment && !errors.address,
-    errors: errors.payment || errors.address || '',
+  contactsForm = new ContactsForm(
+    cloneTemplate<HTMLFormElement>('#contacts'),
+    events
+  );
+
+  const contactsElement = contactsForm.render({
+    email: buyerData.email,
+    phone: buyerData.phone,
+    valid: !errors.email && !errors.phone,
+    errors: errors.email || errors.phone || '',
   });
+
+  modal.render({ content: contactsElement });
+});
+
+// Сохраняем email и телефон из второй формы.
+events.on<{ field: string; value: string }>('contacts:input', (data) => {
+  if (data.field === 'email') {
+    buyerModel.setData({ email: data.value });
+  }
+
+  if (data.field === 'phone') {
+    buyerModel.setData({ phone: data.value });
+  }
 });
 
 // Закрываем модальное окно по событию от компонента Modal.
 events.on('modal:close', () => {
   basketView = null;
   orderForm = null;
+  contactsForm = null;
   modal.close();
 });
 
