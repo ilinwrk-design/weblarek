@@ -3,10 +3,12 @@ import './scss/styles.scss';
 import { WebLarekApi } from './components/Communication/WebLarekApi';
 import { Products } from './components/Models/Products';
 import { Basket } from './components/Models/Basket';
+import { Buyer } from './components/Models/Buyer';
 import { BasketCard } from './components/View/BasketCard';
 import { BasketView } from './components/View/BasketView';
 import { CatalogCard } from './components/View/CatalogCard';
 import { Modal } from './components/View/Modal';
+import { OrderForm } from './components/View/OrderForm';
 import { Page } from './components/View/Page';
 import { PreviewCard } from './components/View/PreviewCard';
 import { Api } from './components/base/Api';
@@ -20,6 +22,7 @@ const events = new EventEmitter();
 // Создаем модель каталога и основные компоненты представления.
 const productsModel = new Products(events);
 const basketModel = new Basket(events);
+const buyerModel = new Buyer(events);
 const page = new Page(document.body, events);
 const modal = new Modal(
   ensureElement<HTMLElement>('#modal-container'),
@@ -28,6 +31,7 @@ const modal = new Modal(
 
 // Здесь будем хранить открытую корзину, чтобы обновлять её после удаления товара.
 let basketView: BasketView | null = null;
+let orderForm: OrderForm | null = null;
 
 // Класс WebLarekApi использует базовый Api для запросов к серверу.
 const api = new Api(API_URL);
@@ -178,9 +182,62 @@ events.on<{ id: string }>('basket:item-remove', (data) => {
   }
 });
 
+
+// Открываем первый шаг оформления заказа.
+events.on('order:open', () => {
+  basketView = null;
+
+  const buyerData = buyerModel.getData();
+  const errors = buyerModel.validate();
+
+  orderForm = new OrderForm(
+    cloneTemplate<HTMLFormElement>('#order'),
+    events
+  );
+
+  const orderElement = orderForm.render({
+    payment: buyerData.payment,
+    address: buyerData.address,
+    valid: !errors.payment && !errors.address,
+    errors: errors.payment || errors.address || '',
+  });
+
+  modal.render({ content: orderElement });
+});
+
+// Сохраняем выбранный способ оплаты в модели покупателя.
+events.on<{ payment: 'card' | 'cash' }>('order:payment-change', (data) => {
+  buyerModel.setData({ payment: data.payment });
+});
+
+// На первом шаге нас интересует только поле адреса.
+events.on<{ field: string; value: string }>('order:input', (data) => {
+  if (data.field === 'address') {
+    buyerModel.setData({ address: data.value });
+  }
+});
+
+// После изменения данных покупателя обновляем открытую форму.
+events.on('buyer:changed', () => {
+  if (!orderForm) {
+    return;
+  }
+
+  const buyerData = buyerModel.getData();
+  const errors = buyerModel.validate();
+
+  orderForm.render({
+    payment: buyerData.payment,
+    address: buyerData.address,
+    valid: !errors.payment && !errors.address,
+    errors: errors.payment || errors.address || '',
+  });
+});
+
 // Закрываем модальное окно по событию от компонента Modal.
 events.on('modal:close', () => {
   basketView = null;
+  orderForm = null;
   modal.close();
 });
 
