@@ -12,6 +12,7 @@ import { Modal } from './components/View/Modal';
 import { OrderForm } from './components/View/OrderForm';
 import { Page } from './components/View/Page';
 import { PreviewCard } from './components/View/PreviewCard';
+import { Success } from './components/View/Success';
 import { Api } from './components/base/Api';
 import { EventEmitter } from './components/base/Events';
 import { API_URL } from './utils/constants';
@@ -296,11 +297,33 @@ events.on('contacts:submit', () => {
   webLarekApi
     .createOrder(order)
     .then((response) => {
-      console.log('Заказ успешно отправлен:', response);
+      // Старые формы больше не нужно обновлять после очистки моделей.
+      contactsForm = null;
+      orderForm = null;
+      basketView = null;
+
+      basketModel.clear();
+      buyerModel.clear();
+
+      const success = new Success(
+        cloneTemplate<HTMLElement>('#success'),
+        events
+      );
+
+      const successElement = success.render({
+        total: response.total,
+      });
+
+      modal.render({ content: successElement });
     })
     .catch((error: unknown) => {
       console.error('Не удалось оформить заказ:', error);
     });
+});
+
+// Закрываем сообщение об успешном заказе.
+events.on('success:close', () => {
+  modal.close();
 });
 
 // Закрываем модальное окно по событию от компонента Modal.
