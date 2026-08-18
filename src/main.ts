@@ -16,6 +16,7 @@ import { Api } from './components/base/Api';
 import { EventEmitter } from './components/base/Events';
 import { API_URL } from './utils/constants';
 import { cloneTemplate, ensureElement } from './utils/utils';
+import { IOrderRequest } from './types';
 
 // Один брокер событий используется для связи частей приложения.
 const events = new EventEmitter();
@@ -275,6 +276,31 @@ events.on<{ field: string; value: string }>('contacts:input', (data) => {
   if (data.field === 'phone') {
     buyerModel.setData({ phone: data.value });
   }
+});
+
+
+// Отправляем заполненный заказ на сервер.
+events.on('contacts:submit', () => {
+  const buyerData = buyerModel.getData();
+  const items = basketModel.getItems();
+
+  const order: IOrderRequest = {
+    payment: buyerData.payment as 'card' | 'cash',
+    email: buyerData.email,
+    phone: buyerData.phone,
+    address: buyerData.address,
+    total: basketModel.getTotal(),
+    items: items.map((item) => item.id),
+  };
+
+  webLarekApi
+    .createOrder(order)
+    .then((response) => {
+      console.log('Заказ успешно отправлен:', response);
+    })
+    .catch((error: unknown) => {
+      console.error('Не удалось оформить заказ:', error);
+    });
 });
 
 // Закрываем модальное окно по событию от компонента Modal.
