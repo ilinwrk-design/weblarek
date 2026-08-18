@@ -3,6 +3,8 @@ import './scss/styles.scss';
 import { WebLarekApi } from './components/Communication/WebLarekApi';
 import { Products } from './components/Models/Products';
 import { Basket } from './components/Models/Basket';
+import { BasketCard } from './components/View/BasketCard';
+import { BasketView } from './components/View/BasketView';
 import { CatalogCard } from './components/View/CatalogCard';
 import { Modal } from './components/View/Modal';
 import { Page } from './components/View/Page';
@@ -23,6 +25,9 @@ const modal = new Modal(
   ensureElement<HTMLElement>('#modal-container'),
   events
 );
+
+// Здесь будем хранить открытую корзину, чтобы обновлять её после удаления товара.
+let basketView: BasketView | null = null;
 
 // Класс WebLarekApi использует базовый Api для запросов к серверу.
 const api = new Api(API_URL);
@@ -105,10 +110,77 @@ events.on<{ id: string }>('preview:action', (data) => {
 // После изменения корзины обновляем счетчик на главной странице.
 events.on('basket:changed', () => {
   page.render({ counter: basketModel.getCount() });
+
+  // Если корзина сейчас открыта, обновляем её содержимое.
+  if (basketView) {
+    const items = basketModel.getItems();
+
+    const basketCards = items.map((product, index) => {
+      const card = new BasketCard(
+        cloneTemplate<HTMLElement>('#card-basket'),
+        events
+      );
+
+      return card.render({
+        id: product.id,
+        title: product.title,
+        price: product.price,
+        index: index + 1,
+      });
+    });
+
+    basketView.render({
+      items: basketCards,
+      total: basketModel.getTotal(),
+      valid: items.length > 0,
+    });
+  }
+});
+
+// Открываем корзину по клику на иконку в шапке.
+events.on('basket:open', () => {
+  const items = basketModel.getItems();
+
+  basketView = new BasketView(
+    cloneTemplate<HTMLElement>('#basket'),
+    events
+  );
+
+  const basketCards = items.map((product, index) => {
+    const card = new BasketCard(
+      cloneTemplate<HTMLElement>('#card-basket'),
+      events
+    );
+
+    return card.render({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      index: index + 1,
+    });
+  });
+
+  const basketElement = basketView.render({
+    items: basketCards,
+    total: basketModel.getTotal(),
+    valid: items.length > 0,
+  });
+
+  modal.render({ content: basketElement });
+});
+
+// Удаляем товар по кнопке в строке корзины.
+events.on<{ id: string }>('basket:item-remove', (data) => {
+  const product = productsModel.getItemById(data.id);
+
+  if (product) {
+    basketModel.removeItem(product);
+  }
 });
 
 // Закрываем модальное окно по событию от компонента Modal.
 events.on('modal:close', () => {
+  basketView = null;
   modal.close();
 });
 
