@@ -131,7 +131,7 @@ interface IProduct {
 
 - `id: string` — уникальный идентификатор товара;
 - `description: string` — подробное описание товара;
-- `image: string` — относительный путь к изображению;
+- `image: string` — путь к изображению товара. После получения каталога с сервера Презентер добавляет к нему адрес CDN перед сохранением товаров в модель;
 - `title: string` — название товара;
 - `category: string` — категория товара;
 - `price: number | null` — цена товара. Значение `null` означает, что товар недоступен для покупки.
@@ -210,8 +210,8 @@ type TBuyerErrors = Partial<Record<keyof IBuyer, string>>;
 
 ### Интерфейсы карточек
 
-- `ICatalogCard extends ICard` — добавляет `category: string` и `image: string`;
-- `IPreviewCard extends ICard` — добавляет категорию, изображение, описание, текст кнопки и её состояние `disabled`;
+- `ICatalogCard extends ICard` — добавляет `category: string`, `image: string` и `alt: string`;
+- `IPreviewCard extends ICard` — добавляет категорию, изображение, подпись `alt`, описание, текст кнопки и её состояние `disabled`;
 - `IBasketCard extends ICard` — добавляет `index: number` для номера позиции в корзине.
 
 ### Интерфейс `IBasketView`
@@ -404,7 +404,8 @@ type TBuyerErrors = Partial<Record<keyof IBuyer, string>>;
 Методы и сеттеры:
 
 - `set category(value: string)` — отображает категорию и устанавливает соответствующий модификатор её оформления;
-- `set image(value: string)` — устанавливает адрес изображения товара.
+- `set image(value: string)` — устанавливает готовый адрес изображения товара;
+- `set alt(value: string)` — устанавливает альтернативный текст изображения.
 
 События:
 
@@ -431,6 +432,7 @@ type TBuyerErrors = Partial<Record<keyof IBuyer, string>>;
 
 - `set category(value: string)` — отображает категорию товара и её оформление;
 - `set image(value: string)` — отображает изображение товара;
+- `set alt(value: string)` — устанавливает альтернативный текст изображения;
 - `set description(value: string)` — отображает подробное описание;
 - `set buttonText(value: string)` — отображает переданный Презентером текст кнопки (`Купить`, `Удалить из корзины` или `Недоступно`);
 - `set buttonDisabled(value: boolean)` — включает или блокирует кнопку действия.
@@ -679,7 +681,7 @@ View-компонент
 
 ### Отображение каталога
 
-После получения товаров с сервера массив сохраняется в модели `Products` методом `setItems()`. Модель генерирует событие `products:changed`.
+После получения товаров с сервера Презентер один раз проходит по массиву товаров и формирует полный путь к каждому изображению с помощью `CDN_URL`. Подготовленный массив сохраняется в модели `Products` методом `setItems()`. Модель генерирует событие `products:changed`.
 
 Презентер обрабатывает это событие следующим образом:
 

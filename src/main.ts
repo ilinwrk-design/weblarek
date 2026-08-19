@@ -15,7 +15,7 @@ import { PreviewCard } from './components/View/PreviewCard';
 import { Success } from './components/View/Success';
 import { Api } from './components/base/Api';
 import { EventEmitter } from './components/base/Events';
-import { API_URL } from './utils/constants';
+import { API_URL, CDN_URL } from './utils/constants';
 import { cloneTemplate, ensureElement } from './utils/utils';
 import { IOrderRequest } from './types';
 
@@ -58,6 +58,7 @@ events.on('products:changed', () => {
       price: product.price,
       category: product.category,
       image: product.image,
+      alt: product.title,
     });
   });
 
@@ -103,6 +104,7 @@ events.on('product:selected', () => {
     price: product.price,
     category: product.category,
     image: product.image,
+    alt: product.title,
     description: product.description,
     buttonText,
     buttonDisabled: product.price === null,
@@ -362,7 +364,12 @@ events.on('modal:close', () => {
 webLarekApi
   .getProducts()
   .then((response) => {
-    productsModel.setItems(response.items);
+    const products = response.items.map((product) => ({
+      ...product,
+      image: `${CDN_URL}${product.image}`,
+    }));
+
+    productsModel.setItems(products);
   })
   .catch((error: unknown) => {
     console.error('Не удалось получить каталог товаров:', error);

@@ -1,6 +1,6 @@
 import { Card } from './Card';
 import { ICatalogCard, ICardActions } from '../../types';
-import { CDN_URL, categoryMap } from '../../utils/constants';
+import { categoryMap } from '../../utils/constants';
 import { ensureElement } from '../../utils/utils';
 
 /** Карточка товара в каталоге. */
@@ -25,6 +25,10 @@ export class CatalogCard extends Card<ICatalogCard> {
   }
 
   set image(value: string) {
-    this.setImage(this.imageElement, `${CDN_URL}${value}`, this.titleElement.textContent ?? '');
+    this.setImage(this.imageElement, value);
+  }
+
+  set alt(value: string) {
+    this.imageElement.alt = value;
   }
 }

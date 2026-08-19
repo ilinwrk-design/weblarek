@@ -82,12 +82,14 @@ export interface ICardActions {
 export interface ICatalogCard extends ICard {
   category: string;
   image: string;
+  alt: string;
 }
 
 /** Данные карточки подробного просмотра товара. */
 export interface IPreviewCard extends ICard {
   category: string;
   image: string;
+  alt: string;
   description: string;
   buttonText: string;
   buttonDisabled: boolean;
