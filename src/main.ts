@@ -17,7 +17,7 @@ import { Api } from './components/base/Api';
 import { EventEmitter } from './components/base/Events';
 import { API_URL, CDN_URL } from './utils/constants';
 import { cloneTemplate, ensureElement } from './utils/utils';
-import { IOrderRequest } from './types';
+import { IOrderRequest, TPayment } from './types';
 
 // Один брокер событий используется для связи частей приложения.
 const events = new EventEmitter();
@@ -32,10 +32,39 @@ const modal = new Modal(
   events
 );
 
-// Здесь будем хранить открытую корзину, чтобы обновлять её после удаления товара.
-let basketView: BasketView | null = null;
-let orderForm: OrderForm | null = null;
-let contactsForm: ContactsForm | null = null;
+// Статичные компоненты создаём один раз при загрузке страницы.
+const previewCard = new PreviewCard(
+  cloneTemplate<HTMLElement>('#card-preview'),
+  {
+    onClick: () => events.emit('preview:action'),
+  }
+);
+const basketView = new BasketView(
+  cloneTemplate<HTMLElement>('#basket'),
+  events
+);
+const basketCard = new BasketCard(
+  cloneTemplate<HTMLElement>('#card-basket')
+);
+const orderForm = new OrderForm(
+  cloneTemplate<HTMLFormElement>('#order'),
+  events
+);
+const contactsForm = new ContactsForm(
+  cloneTemplate<HTMLFormElement>('#contacts'),
+  events
+);
+const success = new Success(
+  cloneTemplate<HTMLElement>('#success'),
+  events
+);
+
+// Начальное состояние корзины задаём один раз.
+basketView.render({
+  items: [],
+  total: 0,
+  valid: false,
+});
 
 // Класс WebLarekApi использует базовый Api для запросов к серверу.
 const api = new Api(API_URL);
@@ -82,13 +111,6 @@ events.on('product:selected', () => {
     return;
   }
 
-  const previewCard = new PreviewCard(
-    cloneTemplate<HTMLElement>('#card-preview'),
-    {
-      onClick: () => events.emit('preview:action'),
-    }
-  );
-
   let buttonText = 'Купить';
 
   if (basketModel.hasItem(product.id)) {
@@ -132,66 +154,31 @@ events.on('preview:action', () => {
 
 // После изменения корзины обновляем счетчик на главной странице.
 events.on('basket:changed', () => {
-  page.render({ counter: basketModel.getCount() });
+  const items = basketModel.getItems();
 
-  // Если корзина сейчас открыта, обновляем её содержимое.
-  if (basketView) {
-    const items = basketModel.getItems();
-
-    const basketCards = items.map((product, index) => {
-      const card = new BasketCard(
-        cloneTemplate<HTMLElement>('#card-basket'),
-        {
-          onClick: () => events.emit('basket:item-remove', { id: product.id }),
-        }
-      );
-
-      return card.render({
+  const basketCards = items.map((product, index) => {
+    return basketCard.renderItem(
+      {
         title: product.title,
         price: product.price,
         index: index + 1,
-      });
-    });
-
-    basketView.render({
-      items: basketCards,
-      total: basketModel.getTotal(),
-      valid: items.length > 0,
-    });
-  }
-});
-
-// Открываем корзину по клику на иконку в шапке.
-events.on('basket:open', () => {
-  const items = basketModel.getItems();
-
-  basketView = new BasketView(
-    cloneTemplate<HTMLElement>('#basket'),
-    events
-  );
-
-  const basketCards = items.map((product, index) => {
-    const card = new BasketCard(
-      cloneTemplate<HTMLElement>('#card-basket'),
-      {
-        onClick: () => events.emit('basket:item-remove', { id: product.id }),
-      }
+      },
+      () => events.emit('basket:item-remove', { id: product.id })
     );
-
-    return card.render({
-      title: product.title,
-      price: product.price,
-      index: index + 1,
-    });
   });
 
-  const basketElement = basketView.render({
+  page.render({ counter: basketModel.getCount() });
+
+  basketView.render({
     items: basketCards,
     total: basketModel.getTotal(),
     valid: items.length > 0,
   });
+});
 
-  modal.render({ content: basketElement });
+// Открываем корзину по клику на иконку в шапке.
+events.on('basket:open', () => {
+  modal.render({ content: basketView.render() });
 });
 
 // Удаляем товар по кнопке в строке корзины.
@@ -206,18 +193,11 @@ events.on<{ id: string }>('basket:item-remove', (data) => {
 
 // Открываем первый шаг оформления заказа.
 events.on('order:open', () => {
-  basketView = null;
-
   const buyerData = buyerModel.getData();
   const errors = buyerModel.validate();
 
-  orderForm = new OrderForm(
-    cloneTemplate<HTMLFormElement>('#order'),
-    events
-  );
-
   const orderElement = orderForm.render({
-    payment: buyerData.payment,
+    payment: buyerData.payment as 'card' | 'cash',
     address: buyerData.address,
     valid: !errors.payment && !errors.address,
     errors: errors.payment || errors.address || '',
@@ -243,37 +223,26 @@ events.on('buyer:changed', () => {
   const buyerData = buyerModel.getData();
   const errors = buyerModel.validate();
 
-  if (orderForm) {
-    orderForm.render({
-      payment: buyerData.payment,
-      address: buyerData.address,
-      valid: !errors.payment && !errors.address,
-      errors: errors.payment || errors.address || '',
-    });
-  }
+  orderForm.render({
+    payment: buyerData.payment as TPayment,
+    address: buyerData.address,
+    valid: !errors.payment && !errors.address,
+    errors: errors.payment || errors.address || '',
+  });
 
-  if (contactsForm) {
-    contactsForm.render({
-      email: buyerData.email,
-      phone: buyerData.phone,
-      valid: !errors.email && !errors.phone,
-      errors: errors.email || errors.phone || '',
-    });
-  }
+  contactsForm.render({
+    email: buyerData.email,
+    phone: buyerData.phone,
+    valid: !errors.email && !errors.phone,
+    errors: errors.email || errors.phone || '',
+  });
 });
 
 
 // Переходим ко второму шагу оформления заказа.
 events.on('order:submit', () => {
-  orderForm = null;
-
   const buyerData = buyerModel.getData();
   const errors = buyerModel.validate();
-
-  contactsForm = new ContactsForm(
-    cloneTemplate<HTMLFormElement>('#contacts'),
-    events
-  );
 
   const contactsElement = contactsForm.render({
     email: buyerData.email,
@@ -300,19 +269,10 @@ events.on<{ field: string; value: string }>('contacts:input', (data) => {
 // Отправляем заполненный заказ на сервер.
 events.on('contacts:submit', () => {
   const buyerData = buyerModel.getData();
-  const errors = buyerModel.validate();
   const items = basketModel.getItems();
 
-  if (
-    Object.keys(errors).length > 0 ||
-    !buyerData.payment ||
-    items.length === 0
-  ) {
-    return;
-  }
-
   const order: IOrderRequest = {
-    payment: buyerData.payment,
+    payment: buyerData.payment as TPayment,
     email: buyerData.email,
     phone: buyerData.phone,
     address: buyerData.address,
@@ -323,18 +283,8 @@ events.on('contacts:submit', () => {
   webLarekApi
     .createOrder(order)
     .then((response) => {
-      // Старые формы больше не нужно обновлять после очистки моделей.
-      contactsForm = null;
-      orderForm = null;
-      basketView = null;
-
       basketModel.clear();
       buyerModel.clear();
-
-      const success = new Success(
-        cloneTemplate<HTMLElement>('#success'),
-        events
-      );
 
       const successElement = success.render({
         total: response.total,
@@ -352,12 +302,6 @@ events.on('success:close', () => {
   modal.close();
 });
 
-// После закрытия модального окна сбрасываем ссылки на временные компоненты.
-events.on('modal:close', () => {
-  basketView = null;
-  orderForm = null;
-  contactsForm = null;
-});
 
 // Получаем товары с сервера. После сохранения модель сама сообщит об изменении каталога.
 webLarekApi
