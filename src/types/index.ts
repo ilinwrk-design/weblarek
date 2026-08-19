@@ -69,9 +69,13 @@ export interface IPage {
 
 /** Общие отображаемые данные любой карточки товара. */
 export interface ICard {
-  id: string;
   title: string;
   price: number | null;
+}
+
+/** Обработчики пользовательских действий карточки. */
+export interface ICardActions {
+  onClick: () => void;
 }
 
 /** Данные карточки товара в каталоге. */

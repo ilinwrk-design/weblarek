@@ -1,6 +1,5 @@
 import { Card } from './Card';
-import { IEvents } from '../base/Events';
-import { ICatalogCard } from '../../types';
+import { ICatalogCard, ICardActions } from '../../types';
 import { CDN_URL, categoryMap } from '../../utils/constants';
 import { ensureElement } from '../../utils/utils';
 
@@ -9,18 +8,13 @@ export class CatalogCard extends Card<ICatalogCard> {
   protected categoryElement: HTMLElement;
   protected imageElement: HTMLImageElement;
 
-  constructor(container: HTMLElement, events: IEvents) {
-    super(container, events);
+  constructor(container: HTMLElement, actions: ICardActions) {
+    super(container);
 
     this.categoryElement = ensureElement<HTMLElement>('.card__category', container);
     this.imageElement = ensureElement<HTMLImageElement>('.card__image', container);
 
-    this.container.addEventListener('click', () => {
-      const id = this.container.dataset.id;
-      if (id) {
-        this.events.emit('card:select', { id });
-      }
-    });
+    this.container.addEventListener('click', actions.onClick);
   }
 
   set category(value: string) {

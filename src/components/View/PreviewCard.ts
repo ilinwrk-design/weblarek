@@ -1,6 +1,5 @@
 import { Card } from './Card';
-import { IEvents } from '../base/Events';
-import { IPreviewCard } from '../../types';
+import { IPreviewCard, ICardActions } from '../../types';
 import { CDN_URL, categoryMap } from '../../utils/constants';
 import { ensureElement } from '../../utils/utils';
 
@@ -11,20 +10,15 @@ export class PreviewCard extends Card<IPreviewCard> {
   protected descriptionElement: HTMLElement;
   protected actionButton: HTMLButtonElement;
 
-  constructor(container: HTMLElement, events: IEvents) {
-    super(container, events);
+  constructor(container: HTMLElement, actions: ICardActions) {
+    super(container);
 
     this.categoryElement = ensureElement<HTMLElement>('.card__category', container);
     this.imageElement = ensureElement<HTMLImageElement>('.card__image', container);
     this.descriptionElement = ensureElement<HTMLElement>('.card__text', container);
     this.actionButton = ensureElement<HTMLButtonElement>('.card__button', container);
 
-    this.actionButton.addEventListener('click', () => {
-      const id = this.container.dataset.id;
-      if (id) {
-        this.events.emit('preview:action', { id });
-      }
-    });
+    this.actionButton.addEventListener('click', actions.onClick);
   }
 
   set category(value: string) {

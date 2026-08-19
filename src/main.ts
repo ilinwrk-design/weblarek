@@ -48,10 +48,17 @@ events.on('products:changed', () => {
   const cards = products.map((product) => {
     const card = new CatalogCard(
       cloneTemplate<HTMLElement>('#card-catalog'),
-      events
+      {
+        onClick: () => events.emit('card:select', { id: product.id }),
+      }
     );
 
-    return card.render(product);
+    return card.render({
+      title: product.title,
+      price: product.price,
+      category: product.category,
+      image: product.image,
+    });
   });
 
   page.render({ gallery: cards });
@@ -76,7 +83,9 @@ events.on('product:selected', () => {
 
   const previewCard = new PreviewCard(
     cloneTemplate<HTMLElement>('#card-preview'),
-    events
+    {
+      onClick: () => events.emit('preview:action', { id: product.id }),
+    }
   );
 
   let buttonText = 'Купить';
@@ -90,7 +99,11 @@ events.on('product:selected', () => {
   }
 
   const previewElement = previewCard.render({
-    ...product,
+    title: product.title,
+    price: product.price,
+    category: product.category,
+    image: product.image,
+    description: product.description,
     buttonText,
     buttonDisabled: product.price === null,
   });
@@ -126,11 +139,12 @@ events.on('basket:changed', () => {
     const basketCards = items.map((product, index) => {
       const card = new BasketCard(
         cloneTemplate<HTMLElement>('#card-basket'),
-        events
+        {
+          onClick: () => events.emit('basket:item-remove', { id: product.id }),
+        }
       );
 
       return card.render({
-        id: product.id,
         title: product.title,
         price: product.price,
         index: index + 1,
@@ -157,11 +171,12 @@ events.on('basket:open', () => {
   const basketCards = items.map((product, index) => {
     const card = new BasketCard(
       cloneTemplate<HTMLElement>('#card-basket'),
-      events
+      {
+        onClick: () => events.emit('basket:item-remove', { id: product.id }),
+      }
     );
 
     return card.render({
-      id: product.id,
       title: product.title,
       price: product.price,
       index: index + 1,
