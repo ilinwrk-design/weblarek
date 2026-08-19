@@ -85,7 +85,7 @@ events.on('product:selected', () => {
   const previewCard = new PreviewCard(
     cloneTemplate<HTMLElement>('#card-preview'),
     {
-      onClick: () => events.emit('preview:action', { id: product.id }),
+      onClick: () => events.emit('preview:action'),
     }
   );
 
@@ -114,8 +114,8 @@ events.on('product:selected', () => {
 });
 
 // Обрабатываем кнопку действия в подробной карточке товара.
-events.on<{ id: string }>('preview:action', (data) => {
-  const product = productsModel.getItemById(data.id);
+events.on('preview:action', () => {
+  const product = productsModel.getSelectedItem();
 
   if (!product || product.price === null) {
     return;
