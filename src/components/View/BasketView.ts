@@ -22,13 +22,6 @@ export class BasketView extends Component<IBasketView> {
   }
 
   set items(items: HTMLElement[]) {
-    if (items.length === 0) {
-      const emptyMessage = document.createElement('li');
-      emptyMessage.textContent = 'Корзина пуста';
-      this.listElement.replaceChildren(emptyMessage);
-      return;
-    }
-
     this.listElement.replaceChildren(...items);
   }
 
