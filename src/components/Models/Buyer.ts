@@ -1,4 +1,4 @@
-import type { IBuyer, TBuyerData, TBuyerErrors } from '../../types';
+import type { TBuyerData, TBuyerErrors } from '../../types';
 import type { IEvents } from '../base/Events';
 
 const EMPTY_BUYER_DATA: TBuyerData = {
@@ -61,19 +61,4 @@ export class Buyer {
     return errors;
   }
 
-  /** Возвращает данные покупателя после проверки. */
-  getValidData(): IBuyer | null {
-    const errors = this.validate();
-
-    if (Object.keys(errors).length > 0 || !this.data.payment) {
-      return null;
-    }
-
-    return {
-      payment: this.data.payment,
-      email: this.data.email,
-      phone: this.data.phone,
-      address: this.data.address,
-    };
-  }
 }

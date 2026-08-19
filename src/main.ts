@@ -282,10 +282,15 @@ events.on<{ field: string; value: string }>('contacts:input', (data) => {
 
 // Отправляем заполненный заказ на сервер.
 events.on('contacts:submit', () => {
-  const buyerData = buyerModel.getValidData();
+  const buyerData = buyerModel.getData();
+  const errors = buyerModel.validate();
   const items = basketModel.getItems();
 
-  if (!buyerData || items.length === 0) {
+  if (
+    Object.keys(errors).length > 0 ||
+    !buyerData.payment ||
+    items.length === 0
+  ) {
     return;
   }
 
