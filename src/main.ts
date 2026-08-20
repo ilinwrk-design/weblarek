@@ -43,9 +43,6 @@ const basketView = new BasketView(
   cloneTemplate<HTMLElement>('#basket'),
   events
 );
-const basketCard = new BasketCard(
-  cloneTemplate<HTMLElement>('#card-basket')
-);
 const orderForm = new OrderForm(
   cloneTemplate<HTMLFormElement>('#order'),
   events
@@ -157,14 +154,18 @@ events.on('basket:changed', () => {
   const items = basketModel.getItems();
 
   const basketCards = items.map((product, index) => {
-    return basketCard.renderItem(
+    const card = new BasketCard(
+      cloneTemplate<HTMLElement>('#card-basket'),
       {
-        title: product.title,
-        price: product.price,
-        index: index + 1,
-      },
-      () => events.emit('basket:item-remove', { id: product.id })
+        onClick: () => events.emit('basket:item-remove', { id: product.id }),
+      }
     );
+
+    return card.render({
+      title: product.title,
+      price: product.price,
+      index: index + 1,
+    });
   });
 
   page.render({ counter: basketModel.getCount() });
