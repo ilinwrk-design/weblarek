@@ -16,6 +16,9 @@ export class BasketView extends Component<IBasketView> {
     this.totalElement = ensureElement<HTMLElement>('.basket__price', container);
     this.orderButton = ensureElement<HTMLButtonElement>('.basket__button', container);
 
+    // При первом открытии пустой корзины кнопка оформления должна быть заблокирована.
+    this.valid = false;
+
     this.orderButton.addEventListener('click', () => {
       this.events.emit('order:open');
     });

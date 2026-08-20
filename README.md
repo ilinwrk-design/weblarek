@@ -472,7 +472,7 @@ type TBuyerErrors = Partial<Record<keyof IBuyer, string>>;
 
 Конструктор:
 
-- `constructor(container: HTMLElement, events: IEvents)` — принимает корневой элемент корзины и брокер событий.
+- `constructor(container: HTMLElement, events: IEvents)` — принимает корневой элемент корзины и брокер событий. В конструкторе кнопка оформления сразу блокируется через `this.valid = false`, чтобы пустая корзина при первом открытии имела корректное состояние.
 
 Поля:
 

@@ -56,13 +56,6 @@ const success = new Success(
   events
 );
 
-// Начальное состояние корзины задаём один раз.
-basketView.render({
-  items: [],
-  total: 0,
-  valid: false,
-});
-
 // Класс WebLarekApi использует базовый Api для запросов к серверу.
 const api = new Api(API_URL);
 const webLarekApi = new WebLarekApi(api);
