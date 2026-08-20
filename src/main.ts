@@ -197,8 +197,13 @@ events.on('order:open', () => {
   const buyerData = buyerModel.getData();
   const errors = buyerModel.validate();
 
+  if (buyerData.payment) {
+    orderForm.render({ payment: buyerData.payment });
+  } else {
+    orderForm.clearPayment();
+  }
+
   const orderElement = orderForm.render({
-    payment: buyerData.payment as 'card' | 'cash',
     address: buyerData.address,
     valid: !errors.payment && !errors.address,
     errors: errors.payment || errors.address || '',
@@ -224,8 +229,13 @@ events.on('buyer:changed', () => {
   const buyerData = buyerModel.getData();
   const errors = buyerModel.validate();
 
+  if (buyerData.payment) {
+    orderForm.render({ payment: buyerData.payment });
+  } else {
+    orderForm.clearPayment();
+  }
+
   orderForm.render({
-    payment: buyerData.payment as TPayment,
     address: buyerData.address,
     valid: !errors.payment && !errors.address,
     errors: errors.payment || errors.address || '',

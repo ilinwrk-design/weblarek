@@ -228,7 +228,7 @@ type TBuyerErrors = Partial<Record<keyof IBuyer, string>>;
 
 ### Интерфейс `IOrderForm`
 
-Расширяет `IFormState` и содержит `payment: TPayment | ''` и `address: string`.
+Расширяет `IFormState` и содержит `payment: TPayment` и `address: string`.
 
 ### Интерфейс `IContactsForm`
 
@@ -568,7 +568,8 @@ type TBuyerErrors = Partial<Record<keyof IBuyer, string>>;
 
 Методы и сеттеры:
 
-- `set payment(value: TPayment | '')` — отображает выбранный способ оплаты, переключая активное состояние кнопок;
+- `set payment(value: TPayment)` — отображает выбранный способ оплаты, переключая активное состояние кнопок;
+- `clearPayment(): void` — снимает активное состояние с обеих кнопок оплаты при очистке данных покупателя;
 - `set address(value: string)` — отображает текущее значение адреса.
 
 События:

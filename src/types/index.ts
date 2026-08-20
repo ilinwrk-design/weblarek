@@ -120,7 +120,7 @@ export interface IFormState {
 
 /** Данные первого шага оформления заказа. */
 export interface IOrderForm extends IFormState {
-  payment: TPayment | '';
+  payment: TPayment;
   address: string;
 }
 

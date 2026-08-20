@@ -25,9 +25,14 @@ export class OrderForm extends Form<IOrderForm> {
     });
   }
 
-  set payment(value: TPayment | '') {
+  set payment(value: TPayment) {
     this.cardButton.classList.toggle('button_alt-active', value === 'card');
     this.cashButton.classList.toggle('button_alt-active', value === 'cash');
+  }
+
+  clearPayment(): void {
+    this.cardButton.classList.remove('button_alt-active');
+    this.cashButton.classList.remove('button_alt-active');
   }
 
   set address(value: string) {
